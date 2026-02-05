@@ -22,7 +22,7 @@ resource "aws_vpc" "default" {
 #  - 프라이빗 서브넷 : 외부 통신 안함, 필요시 NAT적용 서버 통해 호출(DB나 캐시 접근하는 서버)
 #  - 데이터베이스 서브넷 : DB나 캐시 서버만 위치하는 서브넷 대역
 
-#### Public Subnets
+#### 퍼블릭 서브넷 자동 생성
 resource "aws_subnet" "public" {
   count  = length(var.availability_zones)
   vpc_id = aws_vpc.default.id
@@ -33,5 +33,14 @@ resource "aws_subnet" "public" {
 
   tags = {
     Name = "public${count.index}-${var.vpc_name}"
+  }
+}
+
+#### 퍼블릭 서브넷용 라우팅 테이블 생성
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.default.id
+
+  tags = {
+    Name = "publicrt-${var.vpc_name}"
   }
 }
