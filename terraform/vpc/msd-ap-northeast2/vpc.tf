@@ -44,3 +44,29 @@ resource "aws_route_table" "public" {
     Name = "publicrt-${var.vpc_name}"
   }
 }
+
+# IGW(Internet Gateway)
+# VPC에서 외부와 inbound, outbound 트래픽 처리
+resource "aws_internet_gateway" "default" {
+  vpc_id = aws_vpc.default.id
+
+  tags = {
+    Name = "igw-${var.vpc_name}"
+  }
+}
+
+# NAT Gateway
+# 프라이빗 서브넷의 outbound 트래픽을 IGW로 연결해 외부로 전달
+resource "aws_nat_gateway" "nat" {
+  count = length(var.availability_zones)
+  allocation_id = element(aws_eip.nat.*.id, count.index)
+  subnet_id = element(aws_subnet.public.*.id, count.index)
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "NAT-GW${count.index}-${var.vpc_name}"
+  }
+}
