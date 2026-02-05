@@ -71,6 +71,15 @@ resource "aws_nat_gateway" "nat" {
   }
 }
 
+resource "aws_eip" "nat" {
+  count = length(var.availability_zones)
+  vpc   = true
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 # 퍼블릭 서브넷용 인터넷 라우트
 resource "aws_route" "public_internet_gateway" {
   route_table_id         = aws_route_table.public.id
@@ -84,4 +93,14 @@ resource "aws_route" "private_nat" {
   route_table_id         = element(aws_route_table.private.*.id, count.index)
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = element(aws_nat_gateway.nat.*.id, count.index)
+}
+
+resource "aws_route_table" "private" {
+  count  = length(var.availability_zones)
+  vpc_id = aws_vpc.default.id
+
+  tags = {
+    Name    = "private${count.index}rt-${var.vpc_name}"
+    Network = "Private"
+  }
 }
