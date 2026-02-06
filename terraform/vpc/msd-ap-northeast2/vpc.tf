@@ -45,6 +45,51 @@ resource "aws_route_table" "public" {
   }
 }
 
+resource "aws_eip" "nat" {
+  count = length(var.availability_zones)
+  domain = "vpc"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route_table_association" "public" {
+  count          = length(var.availability_zones)
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_subnet" "private" {
+  count  = length(var.availability_zones)
+  vpc_id = aws_vpc.default.id
+
+  cidr_block        = "10.${var.cidr_numeral}.${lookup(var.cidr_numeral_private, count.index)}.0/20"
+  availability_zone = var.availability_zones[count.index]
+
+  tags = {
+    Name               = "private${count.index}-${var.vpc_name}"
+    immutable_metadata = "{ \"purpose\": \"internal_${var.vpc_name}\", \"target\": null }"
+    Network            = "Private"
+  }
+}
+
+resource "aws_route_table" "private" {
+  count  = length(var.availability_zones)
+  vpc_id = aws_vpc.default.id
+
+  tags = {
+    Name    = "private${count.index}rt-${var.vpc_name}"
+    Network = "Private"
+  }
+}
+
+resource "aws_route_table_association" "private" {
+  count          = length(var.availability_zones)
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
+}
+
 # IGW(Internet Gateway)
 # VPC에서 외부와 inbound, outbound 트래픽 처리
 resource "aws_internet_gateway" "default" {
@@ -71,15 +116,6 @@ resource "aws_nat_gateway" "nat" {
   }
 }
 
-resource "aws_eip" "nat" {
-  count  = length(var.availability_zones)
-  domain = "vpc"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
 # 퍼블릭 서브넷용 인터넷 라우트
 resource "aws_route" "public_internet_gateway" {
   route_table_id         = aws_route_table.public.id
@@ -93,14 +129,4 @@ resource "aws_route" "private_nat" {
   route_table_id         = element(aws_route_table.private.*.id, count.index)
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = element(aws_nat_gateway.nat.*.id, count.index)
-}
-
-resource "aws_route_table" "private" {
-  count  = length(var.availability_zones)
-  vpc_id = aws_vpc.default.id
-
-  tags = {
-    Name    = "private${count.index}rt-${var.vpc_name}"
-    Network = "Private"
-  }
 }

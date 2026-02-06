@@ -10,6 +10,13 @@ variable "cidr_numeral_public" {
   }
 }
 
+variable "cidr_numeral_private" {
+  default = {
+    "0" = "80"
+    "1" = "112"
+  }
+}
+
 # ex. ["ap-northeast-2a","ap-northeast-2c"]
 variable "availability_zones" {
   type        = list(string)
