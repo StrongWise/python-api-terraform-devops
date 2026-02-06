@@ -5,3 +5,6 @@
 .terraform/
 .terraform.lock.hcl
 output
+*.tfstate
+*.tfstate.backup
+*.tfvars
