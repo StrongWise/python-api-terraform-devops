@@ -16,7 +16,7 @@ variable "availability_zones" {
   description = "A comma-delimited list of availability zones for the VPC."
 }
 
-# ex. msd-apnortheast2-vpc
+# ex. vpc-msd-apnortheast2
 variable "vpc_name" {
   description = "The name of the VPC"
 }
